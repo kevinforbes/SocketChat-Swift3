@@ -72,10 +72,15 @@ class UsersViewController: UIViewController, UITableViewDelegate, UITableViewDat
     // MARK: IBAction Methods
     
     @IBAction func exitChat(_ sender: AnyObject) {
-        
+        SocketIOManager.sharedInstance.exitChatWithNickName(self.nickname) {() -> Void in
+            DispatchQueue.main.async(execute: { () -> Void in
+                self.nickname = nil
+                self.users.removeAll()
+                self.tblUserList.isHidden = true
+                self.askForNickname()
+            })
+        }
     }
-
-    
     
     // MARK: Custom Methods
     
@@ -137,6 +142,10 @@ class UsersViewController: UIViewController, UITableViewDelegate, UITableViewDat
     func tableView(_ tableView: UITableView, cellForRowAt indexPath: IndexPath) -> UITableViewCell {
         let cell = tableView.dequeueReusableCell(withIdentifier: "idCellUser", for: indexPath) as! UserCell
         
+        cell.textLabel?.text = users[indexPath.row]["nickname"] as? String
+        cell.detailTextLabel?.text = (users[indexPath.row]["isConnected"] as! Bool) ? "Online" : "Offline"
+        cell.detailTextLabel?.textColor = (users[indexPath.row]["isConnected"] as! Bool) ? UIColor.green : UIColor.red
+        
         return cell
     }
     
@@ -144,5 +153,5 @@ class UsersViewController: UIViewController, UITableViewDelegate, UITableViewDat
     func tableView(_ tableView: UITableView, heightForRowAt indexPath: IndexPath) -> CGFloat {
         return 44.0
     }
-    
+
 }
