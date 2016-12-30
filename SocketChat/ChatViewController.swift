@@ -47,6 +47,32 @@ class ChatViewController: UIViewController, UITableViewDelegate, UITableViewData
 
         NotificationCenter.default.addObserver(self, selector: #selector(self.handleDisconnectedUserUpdateNotification), name: Notification.Name("userWasDisconnectedNotification"), object: nil)
 
+        NotificationCenter.default.addObserver(self, selector: #selector(self.handleUserTypingNotification), name: Notification.Name("userTypingNotification"), object: nil)
+
+    }
+    
+    func handleUserTypingNotification(notification: NSNotification) {
+        if let typingUsersDictionary = notification.object as? [String: AnyObject] {
+            var names = ""
+            var totalTypingUsers = 0
+            for (typingUser, _) in typingUsersDictionary {
+                if typingUser != nickname {
+                    names = (names == "") ? typingUser : "\(names), \(typingUser)"
+                    totalTypingUsers += 1
+                }
+            }
+            
+            if totalTypingUsers > 0 {
+                let verb = (totalTypingUsers == 1) ? "is" : "are"
+                
+                lblOtherUserActivityStatus.text = "\(names) \(verb) now typing a message..."
+                lblOtherUserActivityStatus.isHidden = false
+            }
+            else {
+                lblOtherUserActivityStatus.isHidden = true
+            }
+        }
+        
     }
     
     func handleDisconnectedUserUpdateNotification(notification: NSNotification) {
@@ -200,6 +226,8 @@ class ChatViewController: UIViewController, UITableViewDelegate, UITableViewData
     func dismissKeyboard() {
         if tvMessageEditor.isFirstResponder {
             tvMessageEditor.resignFirstResponder()
+            SocketIOManager.sharedInstance.sendStopTypingMessage(nickname)
+
         }
     }
     
@@ -242,10 +270,11 @@ class ChatViewController: UIViewController, UITableViewDelegate, UITableViewData
     
     // MARK: UITextViewDelegate Methods
     
-    func textViewShouldBeginEditing(_ textView: UITextView) -> Bool {
+    func textViewShouldBeginEditing(textView: UITextView) -> Bool {
+        SocketIOManager.sharedInstance.sendStartTypingMessage(nickname)
+        
         return true
     }
-
     
     // MARK: UIGestureRecognizerDelegate Methods
     
